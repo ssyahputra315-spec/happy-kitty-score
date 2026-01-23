@@ -1,16 +1,18 @@
 import { motion } from 'framer-motion';
-import { HealthRecord, getStatusInfo } from '@/lib/healthStorage';
+import { HealthRecord, getStatusInfo, Cat } from '@/lib/healthStorage';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { RotateCcw, History } from 'lucide-react';
+import { RotateCcw, History, ArrowLeft } from 'lucide-react';
 
 interface HealthResultProps {
   record: HealthRecord;
+  cat: Cat;
   onReset: () => void;
   onViewHistory: () => void;
+  onBack: () => void;
 }
 
-export const HealthResult = ({ record, onReset, onViewHistory }: HealthResultProps) => {
+export const HealthResult = ({ record, cat, onReset, onViewHistory, onBack }: HealthResultProps) => {
   const statusInfo = getStatusInfo(record.status);
   
   const getStatusColorClass = () => {
@@ -37,6 +39,24 @@ export const HealthResult = ({ record, onReset, onViewHistory }: HealthResultPro
       animate={{ opacity: 1, scale: 1 }}
       className="space-y-6"
     >
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="icon" onClick={onBack}>
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+        <div className="w-10 h-10 rounded-full bg-secondary overflow-hidden flex items-center justify-center text-lg">
+          {cat.photo ? (
+            <img src={cat.photo} alt={cat.name} className="w-full h-full object-cover" />
+          ) : (
+            '🐱'
+          )}
+        </div>
+        <div className="flex-1">
+          <h1 className="font-bold text-foreground">{cat.name}</h1>
+          <p className="text-xs text-muted-foreground">Today's Health Check</p>
+        </div>
+      </div>
+
       <div className="text-center space-y-2">
         <motion.div
           initial={{ scale: 0 }}
@@ -46,7 +66,6 @@ export const HealthResult = ({ record, onReset, onViewHistory }: HealthResultPro
         >
           {statusInfo.emoji}
         </motion.div>
-        <h2 className="text-2xl font-bold text-foreground">Today's Health Check</h2>
         <p className="text-muted-foreground">
           {new Date(record.date).toLocaleDateString('en-US', { 
             weekday: 'long', 

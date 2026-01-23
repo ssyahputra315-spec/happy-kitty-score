@@ -3,11 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { HealthQuestion } from './HealthQuestion';
 import { ProgressBar } from './ProgressBar';
 import { Button } from '@/components/ui/button';
-import { HealthAnswers, saveRecord, HealthRecord } from '@/lib/healthStorage';
-import { ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import { HealthAnswers, saveRecord, HealthRecord, Cat } from '@/lib/healthStorage';
+import { ChevronLeft, ChevronRight, Check, ArrowLeft } from 'lucide-react';
 
 interface HealthQuestionnaireProps {
+  cat: Cat;
   onComplete: (record: HealthRecord) => void;
+  onCancel: () => void;
   initialAnswers?: HealthAnswers;
 }
 
@@ -109,7 +111,7 @@ const defaultAnswers: HealthAnswers = {
   appetite: '',
 };
 
-export const HealthQuestionnaire = ({ onComplete, initialAnswers }: HealthQuestionnaireProps) => {
+export const HealthQuestionnaire = ({ cat, onComplete, onCancel, initialAnswers }: HealthQuestionnaireProps) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<HealthAnswers>(initialAnswers || defaultAnswers);
   const [direction, setDirection] = useState(0);
@@ -123,7 +125,7 @@ export const HealthQuestionnaire = ({ onComplete, initialAnswers }: HealthQuesti
 
   const handleNext = () => {
     if (isLastStep) {
-      const record = saveRecord(answers);
+      const record = saveRecord(cat.id, answers);
       onComplete(record);
     } else {
       setDirection(1);
@@ -132,8 +134,12 @@ export const HealthQuestionnaire = ({ onComplete, initialAnswers }: HealthQuesti
   };
 
   const handlePrevious = () => {
-    setDirection(-1);
-    setCurrentStep(prev => prev - 1);
+    if (isFirstStep) {
+      onCancel();
+    } else {
+      setDirection(-1);
+      setCurrentStep(prev => prev - 1);
+    }
   };
 
   const handleAnswerChange = (value: string) => {
@@ -145,6 +151,24 @@ export const HealthQuestionnaire = ({ onComplete, initialAnswers }: HealthQuesti
 
   return (
     <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="icon" onClick={onCancel}>
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+        <div className="w-10 h-10 rounded-full bg-secondary overflow-hidden flex items-center justify-center text-lg">
+          {cat.photo ? (
+            <img src={cat.photo} alt={cat.name} className="w-full h-full object-cover" />
+          ) : (
+            '🐱'
+          )}
+        </div>
+        <div>
+          <h1 className="font-bold text-foreground">{cat.name}</h1>
+          <p className="text-xs text-muted-foreground">Daily Health Check</p>
+        </div>
+      </div>
+
       <ProgressBar current={answeredCount} total={questions.length} />
 
       <AnimatePresence mode="wait" custom={direction}>
@@ -172,11 +196,10 @@ export const HealthQuestionnaire = ({ onComplete, initialAnswers }: HealthQuesti
         <Button
           variant="outline"
           onClick={handlePrevious}
-          disabled={isFirstStep}
           className="flex-1"
         >
           <ChevronLeft className="w-4 h-4 mr-1" />
-          Back
+          {isFirstStep ? 'Cancel' : 'Back'}
         </Button>
         <Button
           onClick={handleNext}

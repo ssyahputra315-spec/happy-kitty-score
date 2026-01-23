@@ -1,3 +1,10 @@
+export interface Cat {
+  id: string;
+  name: string;
+  photo?: string;
+  createdAt: string;
+}
+
 export interface HealthAnswers {
   eating: string;
   water: string;
@@ -11,14 +18,85 @@ export interface HealthAnswers {
 
 export interface HealthRecord {
   date: string;
+  catId: string;
   answers: HealthAnswers;
   score: number;
   percentage: number;
   status: 'excellent' | 'good' | 'warning' | 'critical';
 }
 
-const STORAGE_KEY = 'cat_health_records';
+const CATS_STORAGE_KEY = 'cat_health_cats';
+const RECORDS_STORAGE_KEY = 'cat_health_records';
+const SELECTED_CAT_KEY = 'cat_health_selected_cat';
 
+// Cat Management
+export const generateId = (): string => {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+};
+
+export const getAllCats = (): Cat[] => {
+  try {
+    const data = localStorage.getItem(CATS_STORAGE_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+};
+
+export const getCatById = (id: string): Cat | null => {
+  const cats = getAllCats();
+  return cats.find(c => c.id === id) || null;
+};
+
+export const saveCat = (cat: Omit<Cat, 'id' | 'createdAt'>): Cat => {
+  const newCat: Cat = {
+    ...cat,
+    id: generateId(),
+    createdAt: new Date().toISOString(),
+  };
+  
+  const cats = getAllCats();
+  cats.push(newCat);
+  localStorage.setItem(CATS_STORAGE_KEY, JSON.stringify(cats));
+  
+  return newCat;
+};
+
+export const updateCat = (id: string, updates: Partial<Omit<Cat, 'id' | 'createdAt'>>): Cat | null => {
+  const cats = getAllCats();
+  const index = cats.findIndex(c => c.id === id);
+  
+  if (index === -1) return null;
+  
+  cats[index] = { ...cats[index], ...updates };
+  localStorage.setItem(CATS_STORAGE_KEY, JSON.stringify(cats));
+  
+  return cats[index];
+};
+
+export const deleteCat = (id: string): void => {
+  const cats = getAllCats().filter(c => c.id !== id);
+  localStorage.setItem(CATS_STORAGE_KEY, JSON.stringify(cats));
+  
+  // Also delete all health records for this cat
+  const records = getAllRecords().filter(r => r.catId !== id);
+  localStorage.setItem(RECORDS_STORAGE_KEY, JSON.stringify(records));
+  
+  // Clear selected cat if it was deleted
+  if (getSelectedCatId() === id) {
+    localStorage.removeItem(SELECTED_CAT_KEY);
+  }
+};
+
+export const getSelectedCatId = (): string | null => {
+  return localStorage.getItem(SELECTED_CAT_KEY);
+};
+
+export const setSelectedCatId = (id: string): void => {
+  localStorage.setItem(SELECTED_CAT_KEY, id);
+};
+
+// Health Score Logic
 export const getScoreForAnswer = (question: keyof HealthAnswers, answer: string): number => {
   const scoreMap: Record<keyof HealthAnswers, Record<string, number>> = {
     eating: {
@@ -92,36 +170,43 @@ export const getTodayKey = (): string => {
 
 export const getAllRecords = (): HealthRecord[] => {
   try {
-    const data = localStorage.getItem(STORAGE_KEY);
+    const data = localStorage.getItem(RECORDS_STORAGE_KEY);
     return data ? JSON.parse(data) : [];
   } catch {
     return [];
   }
 };
 
-export const getTodayRecord = (): HealthRecord | null => {
-  const records = getAllRecords();
+export const getRecordsForCat = (catId: string): HealthRecord[] => {
+  return getAllRecords()
+    .filter(r => r.catId === catId)
+    .sort((a, b) => b.date.localeCompare(a.date));
+};
+
+export const getTodayRecordForCat = (catId: string): HealthRecord | null => {
+  const records = getRecordsForCat(catId);
   const today = getTodayKey();
   return records.find(r => r.date === today) || null;
 };
 
-export const saveRecord = (answers: HealthAnswers): HealthRecord => {
+export const saveRecord = (catId: string, answers: HealthAnswers): HealthRecord => {
   const { score, percentage, status } = calculateHealth(answers);
   const today = getTodayKey();
   
   const record: HealthRecord = {
     date: today,
+    catId,
     answers,
     score,
     percentage,
     status,
   };
 
-  const records = getAllRecords().filter(r => r.date !== today);
+  const records = getAllRecords().filter(r => !(r.date === today && r.catId === catId));
   records.push(record);
   records.sort((a, b) => b.date.localeCompare(a.date));
   
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+  localStorage.setItem(RECORDS_STORAGE_KEY, JSON.stringify(records));
   
   return record;
 };
