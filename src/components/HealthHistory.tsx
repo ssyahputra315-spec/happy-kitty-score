@@ -1,16 +1,17 @@
 import { motion } from 'framer-motion';
-import { HealthRecord, getStatusInfo, getAllRecords } from '@/lib/healthStorage';
+import { HealthRecord, getStatusInfo, getRecordsForCat, Cat } from '@/lib/healthStorage';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, TrendingUp } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 
 interface HealthHistoryProps {
+  cat: Cat;
   onBack: () => void;
 }
 
-export const HealthHistory = ({ onBack }: HealthHistoryProps) => {
-  const records = getAllRecords();
+export const HealthHistory = ({ cat, onBack }: HealthHistoryProps) => {
+  const records = getRecordsForCat(cat.id);
 
   const chartData = [...records]
     .reverse()
@@ -37,11 +38,21 @@ export const HealthHistory = ({ onBack }: HealthHistoryProps) => {
       exit={{ opacity: 0, x: -50 }}
       className="space-y-6"
     >
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={onBack}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <h2 className="text-xl font-bold text-foreground">Health History</h2>
+        <div className="w-10 h-10 rounded-full bg-secondary overflow-hidden flex items-center justify-center text-lg">
+          {cat.photo ? (
+            <img src={cat.photo} alt={cat.name} className="w-full h-full object-cover" />
+          ) : (
+            '🐱'
+          )}
+        </div>
+        <div>
+          <h2 className="font-bold text-foreground">{cat.name}'s History</h2>
+          <p className="text-xs text-muted-foreground">{records.length} health records</p>
+        </div>
       </div>
 
       {records.length === 0 ? (
