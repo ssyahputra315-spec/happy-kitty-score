@@ -1,20 +1,35 @@
 import { motion } from 'framer-motion';
-import { Cat, getTodayRecordForCat, getRecordsForCat, getStatusInfo } from '@/lib/healthStorage';
+import { 
+  Cat, 
+  getTodayRecordForCat, 
+  getRecordsForCat, 
+  getStatusInfo,
+  getLatestWeightForCat,
+  getPreferredWeightUnit,
+  convertWeight
+} from '@/lib/healthStorage';
 import { Button } from '@/components/ui/button';
-import { ClipboardCheck, History, ArrowLeft } from 'lucide-react';
+import { ClipboardCheck, History, ArrowLeft, Scale } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface CatDashboardProps {
   cat: Cat;
   onStartCheck: () => void;
   onViewHistory: () => void;
+  onLogWeight: () => void;
   onBack: () => void;
 }
 
-export const CatDashboard = ({ cat, onStartCheck, onViewHistory, onBack }: CatDashboardProps) => {
+export const CatDashboard = ({ cat, onStartCheck, onViewHistory, onLogWeight, onBack }: CatDashboardProps) => {
   const todayRecord = getTodayRecordForCat(cat.id);
   const allRecords = getRecordsForCat(cat.id);
   const hasCheckedToday = !!todayRecord;
+  
+  const latestWeight = getLatestWeightForCat(cat.id);
+  const preferredUnit = getPreferredWeightUnit();
+  const displayWeight = latestWeight 
+    ? convertWeight(latestWeight.weight, latestWeight.unit, preferredUnit)
+    : null;
 
   const getStatusColorClass = (status: string) => {
     switch (status) {
@@ -87,21 +102,35 @@ export const CatDashboard = ({ cat, onStartCheck, onViewHistory, onBack }: CatDa
           {hasCheckedToday ? "Update Today's Check" : 'Start Daily Check'}
         </Button>
 
-        {allRecords.length > 0 && (
+        <div className="grid grid-cols-2 gap-3">
           <Button 
             variant="outline" 
             size="lg" 
-            onClick={onViewHistory}
-            className="text-lg py-6"
+            onClick={onLogWeight}
+            className="py-6"
           >
-            <History className="w-5 h-5 mr-2" />
-            View History
+            <Scale className="w-5 h-5 mr-2" />
+            Log Weight
           </Button>
-        )}
+          
+          {allRecords.length > 0 ? (
+            <Button 
+              variant="outline" 
+              size="lg" 
+              onClick={onViewHistory}
+              className="py-6"
+            >
+              <History className="w-5 h-5 mr-2" />
+              History
+            </Button>
+          ) : (
+            <div />
+          )}
+        </div>
       </div>
 
       {/* Quick Stats */}
-      {allRecords.length > 0 && (
+      {(allRecords.length > 0 || displayWeight) && (
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-card rounded-xl p-3 text-center shadow-card">
             <p className="text-2xl font-bold text-foreground">{allRecords.length}</p>
@@ -109,15 +138,23 @@ export const CatDashboard = ({ cat, onStartCheck, onViewHistory, onBack }: CatDa
           </div>
           <div className="bg-card rounded-xl p-3 text-center shadow-card">
             <p className="text-2xl font-bold text-foreground">
-              {Math.round(allRecords.reduce((sum, r) => sum + r.percentage, 0) / allRecords.length)}%
+              {allRecords.length > 0 
+                ? `${Math.round(allRecords.reduce((sum, r) => sum + r.percentage, 0) / allRecords.length)}%`
+                : '-'
+              }
             </p>
             <p className="text-xs text-muted-foreground">Avg Score</p>
           </div>
           <div className="bg-card rounded-xl p-3 text-center shadow-card">
-            <p className="text-2xl font-bold text-status-excellent">
-              {allRecords.filter(r => r.status === 'excellent').length}
+            <div className="flex items-center justify-center gap-1">
+              <Scale className="w-4 h-4 text-status-good" />
+              <p className="text-2xl font-bold text-foreground">
+                {displayWeight ?? '-'}
+              </p>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {displayWeight ? preferredUnit : 'Weight'}
             </p>
-            <p className="text-xs text-muted-foreground">Excellent</p>
           </div>
         </div>
       )}
