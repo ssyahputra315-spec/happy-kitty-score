@@ -7,6 +7,7 @@ import { CatDashboard } from '@/components/CatDashboard';
 import { HealthQuestionnaire } from '@/components/HealthQuestionnaire';
 import { HealthResult } from '@/components/HealthResult';
 import { HealthHistory } from '@/components/HealthHistory';
+import { WeightLogger } from '@/components/WeightLogger';
 import { 
   Cat, 
   HealthRecord, 
@@ -23,7 +24,8 @@ type Screen =
   | 'cat-dashboard'
   | 'questionnaire' 
   | 'result' 
-  | 'history';
+  | 'history'
+  | 'weight-logger';
 
 const Index = () => {
   const [screen, setScreen] = useState<Screen>('cat-selector');
@@ -92,6 +94,14 @@ const Index = () => {
 
   const handleStartCheck = () => {
     setScreen('questionnaire');
+  };
+
+  const handleLogWeight = () => {
+    setScreen('weight-logger');
+  };
+
+  const handleWeightSaved = () => {
+    setScreen('cat-dashboard');
   };
 
   const handleQuestionnaireComplete = (record: HealthRecord) => {
@@ -174,7 +184,23 @@ const Index = () => {
                 cat={selectedCat}
                 onStartCheck={handleStartCheck}
                 onViewHistory={() => setScreen('history')}
+                onLogWeight={handleLogWeight}
                 onBack={handleBackToCats}
+              />
+            </motion.div>
+          )}
+
+          {screen === 'weight-logger' && selectedCat && (
+            <motion.div
+              key="weight-logger"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <WeightLogger
+                cat={selectedCat}
+                onSave={handleWeightSaved}
+                onCancel={handleBackToDashboard}
               />
             </motion.div>
           )}

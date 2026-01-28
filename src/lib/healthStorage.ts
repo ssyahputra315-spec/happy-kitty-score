@@ -5,6 +5,13 @@ export interface Cat {
   createdAt: string;
 }
 
+export interface WeightRecord {
+  date: string;
+  catId: string;
+  weight: number; // in kg or lbs based on user preference
+  unit: 'kg' | 'lbs';
+}
+
 export interface HealthAnswers {
   eating: string;
   water: string;
@@ -28,6 +35,8 @@ export interface HealthRecord {
 const CATS_STORAGE_KEY = 'cat_health_cats';
 const RECORDS_STORAGE_KEY = 'cat_health_records';
 const SELECTED_CAT_KEY = 'cat_health_selected_cat';
+const WEIGHT_RECORDS_KEY = 'cat_health_weight_records';
+const WEIGHT_UNIT_KEY = 'cat_health_weight_unit';
 
 // Cat Management
 export const generateId = (): string => {
@@ -239,4 +248,65 @@ export const getStatusInfo = (status: HealthRecord['status']) => {
     },
   };
   return info[status];
+};
+
+// Weight Management
+export const getPreferredWeightUnit = (): 'kg' | 'lbs' => {
+  return (localStorage.getItem(WEIGHT_UNIT_KEY) as 'kg' | 'lbs') || 'kg';
+};
+
+export const setPreferredWeightUnit = (unit: 'kg' | 'lbs'): void => {
+  localStorage.setItem(WEIGHT_UNIT_KEY, unit);
+};
+
+export const getAllWeightRecords = (): WeightRecord[] => {
+  try {
+    const data = localStorage.getItem(WEIGHT_RECORDS_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+};
+
+export const getWeightRecordsForCat = (catId: string): WeightRecord[] => {
+  return getAllWeightRecords()
+    .filter(r => r.catId === catId)
+    .sort((a, b) => b.date.localeCompare(a.date));
+};
+
+export const getLatestWeightForCat = (catId: string): WeightRecord | null => {
+  const records = getWeightRecordsForCat(catId);
+  return records.length > 0 ? records[0] : null;
+};
+
+export const saveWeightRecord = (catId: string, weight: number, unit: 'kg' | 'lbs'): WeightRecord => {
+  const today = getTodayKey();
+  
+  const record: WeightRecord = {
+    date: today,
+    catId,
+    weight,
+    unit,
+  };
+
+  // Remove existing record for today if any, then add new one
+  const records = getAllWeightRecords().filter(r => !(r.date === today && r.catId === catId));
+  records.push(record);
+  records.sort((a, b) => b.date.localeCompare(a.date));
+  
+  localStorage.setItem(WEIGHT_RECORDS_KEY, JSON.stringify(records));
+  setPreferredWeightUnit(unit);
+  
+  return record;
+};
+
+export const deleteWeightRecord = (catId: string, date: string): void => {
+  const records = getAllWeightRecords().filter(r => !(r.date === date && r.catId === catId));
+  localStorage.setItem(WEIGHT_RECORDS_KEY, JSON.stringify(records));
+};
+
+export const convertWeight = (weight: number, from: 'kg' | 'lbs', to: 'kg' | 'lbs'): number => {
+  if (from === to) return weight;
+  if (from === 'kg' && to === 'lbs') return Math.round(weight * 2.20462 * 10) / 10;
+  return Math.round(weight / 2.20462 * 10) / 10;
 };
