@@ -1,5 +1,7 @@
 import { motion } from 'framer-motion';
 import { HealthRecord, getStatusInfo, Cat } from '@/lib/healthStorage';
+import { getHealthTips } from '@/lib/healthTips';
+import { HealthTips } from '@/components/HealthTips';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { RotateCcw, History, ArrowLeft } from 'lucide-react';
@@ -14,6 +16,7 @@ interface HealthResultProps {
 
 export const HealthResult = ({ record, cat, onReset, onViewHistory, onBack }: HealthResultProps) => {
   const statusInfo = getStatusInfo(record.status);
+  const healthTips = getHealthTips(record.answers);
   
   const getStatusColorClass = () => {
     switch (record.status) {
@@ -138,11 +141,14 @@ export const HealthResult = ({ record, cat, onReset, onViewHistory, onBack }: He
         </p>
       </motion.div>
 
+      {/* Health Tips */}
+      <HealthTips tips={healthTips} />
+
       {/* Actions */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.8 }}
+        transition={{ delay: 1 }}
         className="flex flex-col gap-3 pt-4"
       >
         <Button 
@@ -168,7 +174,7 @@ export const HealthResult = ({ record, cat, onReset, onViewHistory, onBack }: He
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 1 }}
+        transition={{ delay: 1.2 }}
         className="mt-6 p-4 bg-secondary/50 rounded-lg"
       >
         <p className="text-xs text-muted-foreground text-center">
