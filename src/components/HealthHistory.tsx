@@ -9,9 +9,10 @@ import {
   getPreferredWeightUnit,
   convertWeight
 } from '@/lib/healthStorage';
+import { generateVetReportPDF } from '@/lib/pdfExport';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, TrendingUp, Scale, Activity } from 'lucide-react';
+import { ArrowLeft, TrendingUp, Scale, Activity, Download } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 
 interface HealthHistoryProps {
@@ -78,6 +79,10 @@ export const HealthHistory = ({ cat, onBack }: HealthHistoryProps) => {
     }
   };
 
+  const handleExportPDF = () => {
+    generateVetReportPDF({ cat, preferredUnit });
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, x: 50 }}
@@ -85,21 +90,29 @@ export const HealthHistory = ({ cat, onBack }: HealthHistoryProps) => {
       exit={{ opacity: 0, x: -50 }}
       className="space-y-6"
     >
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={onBack}>
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div className="w-10 h-10 rounded-full bg-secondary overflow-hidden flex items-center justify-center text-lg">
-          {cat.photo ? (
-            <img src={cat.photo} alt={cat.name} className="w-full h-full object-cover" />
-          ) : (
-            '🐱'
-          )}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={onBack}>
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div className="w-10 h-10 rounded-full bg-secondary overflow-hidden flex items-center justify-center text-lg">
+            {cat.photo ? (
+              <img src={cat.photo} alt={cat.name} className="w-full h-full object-cover" />
+            ) : (
+              '🐱'
+            )}
+          </div>
+          <div>
+            <h2 className="font-bold text-foreground">{cat.name}'s History</h2>
+            <p className="text-xs text-muted-foreground">{records.length} health records</p>
+          </div>
         </div>
-        <div>
-          <h2 className="font-bold text-foreground">{cat.name}'s History</h2>
-          <p className="text-xs text-muted-foreground">{records.length} health records</p>
-        </div>
+        {(records.length > 0 || weightRecords.length > 0) && (
+          <Button variant="outline" size="sm" onClick={handleExportPDF}>
+            <Download className="w-4 h-4 mr-1" />
+            PDF
+          </Button>
+        )}
       </div>
 
       {records.length === 0 ? (
