@@ -10,7 +10,7 @@ import {
   getWeightGoalForCat
 } from '@/lib/healthStorage';
 import { Button } from '@/components/ui/button';
-import { ClipboardCheck, History, ArrowLeft, Scale, Target } from 'lucide-react';
+import { ClipboardCheck, History, ArrowLeft, Scale, Target, Bell } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { WeightAlert, WeightStatusBadge } from './WeightAlert';
 
@@ -58,6 +58,29 @@ export const CatDashboard = ({ cat, onStartCheck, onViewHistory, onLogWeight, on
         </Button>
         <h1 className="text-xl font-bold text-foreground">Back to Cats</h1>
       </div>
+
+      {/* Daily Reminder Banner */}
+      {!hasCheckedToday && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-primary/10 border border-primary/30 rounded-xl p-4 cursor-pointer hover:bg-primary/15 transition-colors"
+          onClick={onStartCheck}
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-full bg-primary/20">
+              <Bell className="w-5 h-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <p className="font-medium text-foreground">Time for today's check! 🐱</p>
+              <p className="text-sm text-muted-foreground">
+                Tap here to complete {cat.name}'s daily health assessment
+              </p>
+            </div>
+            <ClipboardCheck className="w-5 h-5 text-primary" />
+          </div>
+        </motion.div>
+      )}
 
       {/* Cat Profile Card */}
       <div className="bg-card rounded-2xl p-6 shadow-card text-center">
