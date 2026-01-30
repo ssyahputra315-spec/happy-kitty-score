@@ -12,6 +12,13 @@ export interface WeightRecord {
   unit: 'kg' | 'lbs';
 }
 
+export interface WeightGoal {
+  catId: string;
+  minWeight: number;
+  maxWeight: number;
+  unit: 'kg' | 'lbs';
+}
+
 export interface HealthAnswers {
   eating: string;
   water: string;
@@ -37,6 +44,7 @@ const RECORDS_STORAGE_KEY = 'cat_health_records';
 const SELECTED_CAT_KEY = 'cat_health_selected_cat';
 const WEIGHT_RECORDS_KEY = 'cat_health_weight_records';
 const WEIGHT_UNIT_KEY = 'cat_health_weight_unit';
+const WEIGHT_GOALS_KEY = 'cat_health_weight_goals';
 
 // Cat Management
 export const generateId = (): string => {
@@ -309,4 +317,60 @@ export const convertWeight = (weight: number, from: 'kg' | 'lbs', to: 'kg' | 'lb
   if (from === to) return weight;
   if (from === 'kg' && to === 'lbs') return Math.round(weight * 2.20462 * 10) / 10;
   return Math.round(weight / 2.20462 * 10) / 10;
+};
+
+// Weight Goals
+export const getAllWeightGoals = (): WeightGoal[] => {
+  try {
+    const data = localStorage.getItem(WEIGHT_GOALS_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+};
+
+export const getWeightGoalForCat = (catId: string): WeightGoal | null => {
+  const goals = getAllWeightGoals();
+  return goals.find(g => g.catId === catId) || null;
+};
+
+export const saveWeightGoal = (catId: string, minWeight: number, maxWeight: number, unit: 'kg' | 'lbs'): WeightGoal => {
+  const goal: WeightGoal = { catId, minWeight, maxWeight, unit };
+  
+  const goals = getAllWeightGoals().filter(g => g.catId !== catId);
+  goals.push(goal);
+  localStorage.setItem(WEIGHT_GOALS_KEY, JSON.stringify(goals));
+  
+  return goal;
+};
+
+export const deleteWeightGoal = (catId: string): void => {
+  const goals = getAllWeightGoals().filter(g => g.catId !== catId);
+  localStorage.setItem(WEIGHT_GOALS_KEY, JSON.stringify(goals));
+};
+
+export type WeightStatus = 'in-range' | 'underweight' | 'overweight' | 'no-goal' | 'no-weight';
+
+export const getWeightStatus = (catId: string): { status: WeightStatus; currentWeight?: number; goal?: WeightGoal; deviation?: number } => {
+  const goal = getWeightGoalForCat(catId);
+  const latestWeight = getLatestWeightForCat(catId);
+  
+  if (!goal) return { status: 'no-goal' };
+  if (!latestWeight) return { status: 'no-weight', goal };
+  
+  const preferredUnit = getPreferredWeightUnit();
+  const currentWeight = convertWeight(latestWeight.weight, latestWeight.unit, preferredUnit);
+  const minWeight = convertWeight(goal.minWeight, goal.unit, preferredUnit);
+  const maxWeight = convertWeight(goal.maxWeight, goal.unit, preferredUnit);
+  
+  if (currentWeight < minWeight) {
+    const deviation = Math.round((minWeight - currentWeight) * 10) / 10;
+    return { status: 'underweight', currentWeight, goal, deviation };
+  }
+  if (currentWeight > maxWeight) {
+    const deviation = Math.round((currentWeight - maxWeight) * 10) / 10;
+    return { status: 'overweight', currentWeight, goal, deviation };
+  }
+  
+  return { status: 'in-range', currentWeight, goal };
 };

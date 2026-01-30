@@ -4,6 +4,7 @@ import { CatSelector } from '@/components/CatSelector';
 import { CatProfile } from '@/components/CatProfile';
 import { EditCatProfile } from '@/components/EditCatProfile';
 import { CatDashboard } from '@/components/CatDashboard';
+import { WeightGoalSetter } from '@/components/WeightGoalSetter';
 import { HealthQuestionnaire } from '@/components/HealthQuestionnaire';
 import { HealthResult } from '@/components/HealthResult';
 import { HealthHistory } from '@/components/HealthHistory';
@@ -25,7 +26,8 @@ type Screen =
   | 'questionnaire' 
   | 'result' 
   | 'history'
-  | 'weight-logger';
+  | 'weight-logger'
+  | 'weight-goal';
 
 const Index = () => {
   const [screen, setScreen] = useState<Screen>('cat-selector');
@@ -100,7 +102,15 @@ const Index = () => {
     setScreen('weight-logger');
   };
 
+  const handleSetWeightGoal = () => {
+    setScreen('weight-goal');
+  };
+
   const handleWeightSaved = () => {
+    setScreen('cat-dashboard');
+  };
+
+  const handleWeightGoalSaved = () => {
     setScreen('cat-dashboard');
   };
 
@@ -185,6 +195,7 @@ const Index = () => {
                 onStartCheck={handleStartCheck}
                 onViewHistory={() => setScreen('history')}
                 onLogWeight={handleLogWeight}
+                onSetWeightGoal={handleSetWeightGoal}
                 onBack={handleBackToCats}
               />
             </motion.div>
@@ -200,6 +211,21 @@ const Index = () => {
               <WeightLogger
                 cat={selectedCat}
                 onSave={handleWeightSaved}
+                onCancel={handleBackToDashboard}
+              />
+            </motion.div>
+          )}
+
+          {screen === 'weight-goal' && selectedCat && (
+            <motion.div
+              key="weight-goal"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <WeightGoalSetter
+                cat={selectedCat}
+                onSave={handleWeightGoalSaved}
                 onCancel={handleBackToDashboard}
               />
             </motion.div>
