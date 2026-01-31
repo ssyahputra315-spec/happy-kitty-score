@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { ClipboardCheck, History, ArrowLeft, Scale, Target, Bell } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { WeightAlert, WeightStatusBadge } from './WeightAlert';
+import { StreakDisplay } from './StreakDisplay';
 
 interface CatDashboardProps {
   cat: Cat;
@@ -117,6 +118,9 @@ export const CatDashboard = ({ cat, onStartCheck, onViewHistory, onLogWeight, on
           </motion.div>
         )}
       </div>
+
+      {/* Streak Display */}
+      <StreakDisplay catId={cat.id} />
 
       {/* Weight Alert */}
       <WeightAlert cat={cat} />
